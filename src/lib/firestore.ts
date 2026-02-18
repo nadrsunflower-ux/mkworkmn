@@ -273,7 +273,7 @@ export async function addActivityLog(
 
 // === Meeting Minutes ===
 export async function getMeetingMinutes(): Promise<MeetingMinutes[]> {
-  const q = query(collection(db, "meetingMinutes"), orderBy("meetingDate", "desc"));
+  const q = query(collection(db, "meetingMinutes"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => docToData<MeetingMinutes>(d));
 }

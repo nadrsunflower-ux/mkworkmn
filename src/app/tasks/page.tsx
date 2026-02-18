@@ -15,7 +15,6 @@ export default function TasksPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<Task["category"]>("인스타그램");
-  const [priority, setPriority] = useState<Task["priority"]>("보통");
   const [dueDate, setDueDate] = useState("");
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
@@ -39,7 +38,6 @@ export default function TasksPage() {
     setTitle("");
     setDescription("");
     setCategory("인스타그램");
-    setPriority("보통");
     setDueDate("");
     setEditTask(null);
     setShowForm(false);
@@ -50,14 +48,14 @@ export default function TasksPage() {
     setSaving(true);
     try {
       if (editTask) {
-        await updateTask(editTask.id, { title, description, category, priority, dueDate });
+        await updateTask(editTask.id, { title, description, category, dueDate });
       } else {
         await addTask({
           title,
           description,
           assignee: activeTab,
           category,
-          priority,
+          priority: "보통",
           status: "todo",
           dueDate,
           isRecurring: false,
@@ -97,7 +95,6 @@ export default function TasksPage() {
     setTitle(task.title);
     setDescription(task.description);
     setCategory(task.category || "인스타그램");
-    setPriority(task.priority);
     setDueDate(task.dueDate);
     setShowForm(true);
   };
@@ -126,13 +123,6 @@ export default function TasksPage() {
     유튜브: "bg-red-100 text-red-700 border-red-200",
   };
 
-  const priorityColor: Record<string, string> = {
-    긴급: "bg-red-100 text-red-700 border-red-200",
-    높음: "bg-orange-100 text-orange-700 border-orange-200",
-    보통: "bg-blue-100 text-blue-700 border-blue-200",
-    낮음: "bg-gray-100 text-gray-600 border-gray-200",
-  };
-
   const TaskSection = ({ label, taskList, borderColor, bgColor }: {
     label: string; taskList: Task[]; borderColor: string; bgColor: string;
   }) => (
@@ -158,9 +148,6 @@ export default function TasksPage() {
                         {task.category}
                       </span>
                     )}
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityColor[task.priority]}`}>
-                      {task.priority}
-                    </span>
                     <h4 className="font-medium text-sm text-gray-800">{task.title}</h4>
                   </div>
                   <span className={`text-xs shrink-0 ${dd.color}`}>{dd.text}</span>
@@ -349,29 +336,14 @@ export default function TasksPage() {
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">우선순위</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as Task["priority"])}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  >
-                    <option value="긴급">긴급</option>
-                    <option value="높음">높음</option>
-                    <option value="보통">보통</option>
-                    <option value="낮음">낮음</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">마감일 *</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">마감일 *</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">

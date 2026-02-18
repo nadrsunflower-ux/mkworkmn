@@ -51,25 +51,6 @@ export default function Dashboard() {
         )
       : 0;
 
-  const priorityColor: Record<string, string> = {
-    긴급: "bg-red-100 text-red-700",
-    높음: "bg-orange-100 text-orange-700",
-    보통: "bg-blue-100 text-blue-700",
-    낮음: "bg-gray-100 text-gray-600",
-  };
-
-  const statusLabel: Record<string, string> = {
-    todo: "할 일",
-    in_progress: "진행 중",
-    done: "완료",
-  };
-
-  const statusColor: Record<string, string> = {
-    todo: "bg-yellow-100 text-yellow-700",
-    in_progress: "bg-blue-100 text-blue-700",
-    done: "bg-green-100 text-green-700",
-  };
-
   const getDDay = (dateStr: string) => {
     const diff = Math.ceil(
       (new Date(dateStr).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
@@ -90,13 +71,7 @@ export default function Dashboard() {
           return (
             <div key={task.id} className="flex items-center justify-between py-2.5 border-b border-gray-50">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className={`text-xs px-2 py-0.5 rounded shrink-0 ${priorityColor[task.priority]}`}>
-                  {task.priority}
-                </span>
                 <span className="text-sm truncate">{task.title}</span>
-                <span className={`text-[11px] px-1.5 py-0.5 rounded shrink-0 ${statusColor[task.status]}`}>
-                  {statusLabel[task.status]}
-                </span>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-2">
                 <span className="text-xs text-gray-400">{task.dueDate}</span>

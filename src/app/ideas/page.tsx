@@ -19,6 +19,8 @@ export default function IdeasPage() {
   const { currentMember } = useMember();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   // 폼
   const [showForm, setShowForm] = useState(false);
@@ -175,6 +177,9 @@ export default function IdeasPage() {
     }
   };
 
+  const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`;
+  const filteredIdeas = ideas.filter((idea) => idea.date.startsWith(monthStr));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -198,8 +203,36 @@ export default function IdeasPage() {
         </button>
       </div>
 
+      {/* 월 선택 */}
+      <div className="flex items-center gap-3">
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+        >
+          {[2026, 2027].map((y) => (
+            <option key={y} value={y}>{y}년</option>
+          ))}
+        </select>
+        <div className="flex gap-1 flex-wrap">
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+            <button
+              key={m}
+              onClick={() => setSelectedMonth(m)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                selectedMonth === m
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {m}월
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 아이디어 목록 */}
-      {ideas.length === 0 ? (
+      {filteredIdeas.length === 0 ? (
         <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
           <p className="text-gray-400 mb-4">등록된 아이디어가 없습니다</p>
           <button
@@ -214,7 +247,7 @@ export default function IdeasPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {ideas.map((idea) => {
+          {filteredIdeas.map((idea) => {
             const ideaComments = comments[idea.id] || [];
             const isOpen = openCommentId === idea.id;
             return (

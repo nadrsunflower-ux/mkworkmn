@@ -8,6 +8,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "김정연" | "유선화">("all");
 
   useEffect(() => {
     getTasks()
@@ -28,23 +29,31 @@ export default function CalendarPage() {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
+  const filteredTasks = activeTab === "all"
+    ? tasks
+    : tasks.filter((t) => t.assignee === activeTab);
+
   const getTasksForDate = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return tasks.filter((t) => t.dueDate === dateStr);
+    return filteredTasks.filter((t) => t.dueDate === dateStr);
   };
 
   const selectedDateTasks = selectedDate
-    ? tasks.filter((t) => t.dueDate === selectedDate)
+    ? filteredTasks.filter((t) => t.dueDate === selectedDate)
     : [];
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  const priorityColor: Record<string, string> = {
-    긴급: "bg-red-500",
-    높음: "bg-orange-500",
-    보통: "bg-blue-500",
-    낮음: "bg-gray-400",
+  // 담당자별 색상
+  const assigneeColor: Record<string, string> = {
+    김정연: "bg-blue-500",
+    유선화: "bg-pink-500",
+  };
+
+  const assigneeBadge: Record<string, string> = {
+    김정연: "bg-blue-100 text-blue-700",
+    유선화: "bg-pink-100 text-pink-700",
   };
 
   const statusLabel: Record<string, string> = {
@@ -83,6 +92,57 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">캘린더</h2>
+
+      {/* 담당자 탭 */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "all"
+              ? "bg-gray-800 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          전체
+        </button>
+        {(["김정연", "유선화"] as const).map((name) => {
+          const count = tasks.filter(
+            (t) => t.assignee === name && t.status !== "done"
+          ).length;
+          const tabBg = name === "김정연" ? "bg-blue-600" : "bg-pink-600";
+          const countBg = name === "김정연" ? "bg-blue-500" : "bg-pink-500";
+          return (
+            <button
+              key={name}
+              onClick={() => setActiveTab(name)}
+              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === name
+                  ? `${tabBg} text-white`
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {name}
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                activeTab === name ? `${countBg} text-white` : "bg-gray-200 text-gray-500"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 색상 범례 */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+          <span className="text-xs text-gray-500">김정연</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+          <span className="text-xs text-gray-500">유선화</span>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 캘린더 */}
@@ -137,8 +197,8 @@ export default function CalendarPage() {
                     {dayTasks.slice(0, 3).map((t) => (
                       <div
                         key={t.id}
-                        className={`w-full h-1.5 rounded-full ${priorityColor[t.priority]}`}
-                        title={t.title}
+                        className={`w-full h-1.5 rounded-full ${assigneeColor[t.assignee] || "bg-gray-400"}`}
+                        title={`${t.assignee}: ${t.title}`}
                       ></div>
                     ))}
                     {dayTasks.length > 3 && (
@@ -178,14 +238,17 @@ export default function CalendarPage() {
           ) : (
             <div className="space-y-3">
               {selectedDateTasks.map((task) => (
-                <div key={task.id} className="border border-gray-100 rounded-lg p-4">
+                <div
+                  key={task.id}
+                  className={`rounded-lg p-4 border-l-4 ${
+                    task.assignee === "김정연"
+                      ? "border-l-blue-500 bg-blue-50/50"
+                      : "border-l-pink-500 bg-pink-50/50"
+                  }`}
+                >
                   <div className="flex items-start justify-between mb-2">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        priorityColor[task.priority]
-                      } text-white`}
-                    >
-                      {task.priority}
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${assigneeBadge[task.assignee] || "bg-gray-100 text-gray-600"}`}>
+                      {task.assignee}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded ${statusColor[task.status]}`}>
                       {statusLabel[task.status]}
@@ -195,7 +258,6 @@ export default function CalendarPage() {
                   {task.description && (
                     <p className="text-xs text-gray-500 mb-2">{task.description}</p>
                   )}
-                  <p className="text-xs text-gray-400">담당: {task.assignee || "미배정"}</p>
                 </div>
               ))}
             </div>
@@ -204,12 +266,12 @@ export default function CalendarPage() {
           {/* 다가오는 마감 알림 */}
           <div className="mt-6 pt-4 border-t border-gray-100">
             <h4 className="text-sm font-bold text-gray-700 mb-3">마감 임박 알림</h4>
-            {tasks
+            {filteredTasks
               .filter((t) => {
                 const dd = getDDay(t.dueDate);
                 return (
                   t.status !== "done" &&
-                  (dd.text === "D-Day" || dd.text.startsWith("D-") && parseInt(dd.text.slice(2)) <= 3)
+                  (dd.text === "D-Day" || (dd.text.startsWith("D-") && parseInt(dd.text.slice(2)) <= 3))
                 );
               })
               .slice(0, 5)
@@ -222,7 +284,7 @@ export default function CalendarPage() {
                     onClick={() => setSelectedDate(task.dueDate)}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${priorityColor[task.priority]}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${assigneeColor[task.assignee] || "bg-gray-400"}`}></div>
                       <span className="text-sm">{task.title}</span>
                     </div>
                     <span className={`text-xs font-bold ${dd.color}`}>{dd.text}</span>
