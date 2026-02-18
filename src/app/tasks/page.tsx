@@ -14,6 +14,7 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<Task["category"]>("인스타그램");
   const [priority, setPriority] = useState<Task["priority"]>("보통");
   const [dueDate, setDueDate] = useState("");
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -37,6 +38,7 @@ export default function TasksPage() {
   const resetForm = () => {
     setTitle("");
     setDescription("");
+    setCategory("인스타그램");
     setPriority("보통");
     setDueDate("");
     setEditTask(null);
@@ -48,12 +50,13 @@ export default function TasksPage() {
     setSaving(true);
     try {
       if (editTask) {
-        await updateTask(editTask.id, { title, description, priority, dueDate });
+        await updateTask(editTask.id, { title, description, category, priority, dueDate });
       } else {
         await addTask({
           title,
           description,
           assignee: activeTab,
+          category,
           priority,
           status: "todo",
           dueDate,
@@ -93,6 +96,7 @@ export default function TasksPage() {
     setEditTask(task);
     setTitle(task.title);
     setDescription(task.description);
+    setCategory(task.category || "인스타그램");
     setPriority(task.priority);
     setDueDate(task.dueDate);
     setShowForm(true);
@@ -113,6 +117,13 @@ export default function TasksPage() {
     if (diff < 0) return { text: `D+${Math.abs(diff)}`, color: "text-red-600 font-bold" };
     if (diff <= 3) return { text: `D-${diff}`, color: "text-orange-600 font-bold" };
     return { text: `D-${diff}`, color: "text-gray-500" };
+  };
+
+  const categoryColor: Record<string, string> = {
+    인스타그램: "bg-pink-100 text-pink-700 border-pink-200",
+    오프라인매장: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    온라인스토어: "bg-purple-100 text-purple-700 border-purple-200",
+    유튜브: "bg-red-100 text-red-700 border-red-200",
   };
 
   const priorityColor: Record<string, string> = {
@@ -141,7 +152,12 @@ export default function TasksPage() {
             return (
               <div key={task.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 group">
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {task.category && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${categoryColor[task.category] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {task.category}
+                      </span>
+                    )}
                     <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityColor[task.priority]}`}>
                       {task.priority}
                     </span>
@@ -313,6 +329,25 @@ export default function TasksPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   placeholder="업무 설명 (선택)"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">채널 *</label>
+                <div className="flex gap-2">
+                  {(["인스타그램", "오프라인매장", "온라인스토어", "유튜브"] as const).map((ch) => (
+                    <button
+                      key={ch}
+                      type="button"
+                      onClick={() => setCategory(ch)}
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                        category === ch
+                          ? categoryColor[ch].replace("border-", "border-") + " ring-2 ring-offset-1 ring-blue-400"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+                      }`}
+                    >
+                      {ch}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

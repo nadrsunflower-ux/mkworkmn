@@ -28,6 +28,7 @@ export interface Task {
   title: string;
   description: string;
   assignee: string;
+  category: "인스타그램" | "오프라인매장" | "온라인스토어" | "유튜브";
   priority: "긴급" | "높음" | "보통" | "낮음";
   status: "todo" | "in_progress" | "done";
   dueDate: string;
