@@ -56,6 +56,8 @@ export default function CalendarPage() {
   const selectedDateTasks = selectedDate
     ? filteredTasks.filter((t) => t.dueDate === selectedDate)
     : [];
+  const incompleteTasks = selectedDateTasks.filter((t) => t.status !== "done");
+  const completeTasks = selectedDateTasks.filter((t) => t.status === "done");
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -74,17 +76,6 @@ export default function CalendarPage() {
     기타: "bg-gray-100 text-gray-600 border-gray-200",
   };
 
-  const statusLabel: Record<string, string> = {
-    todo: "할 일",
-    in_progress: "진행 중",
-    done: "완료",
-  };
-
-  const statusColor: Record<string, string> = {
-    todo: "bg-yellow-100 text-yellow-700",
-    in_progress: "bg-blue-100 text-blue-700",
-    done: "bg-green-100 text-green-700",
-  };
 
   const getDDay = (dateStr: string) => {
     const today = new Date();
@@ -241,6 +232,7 @@ export default function CalendarPage() {
               const dayTasks = getTasksForDate(day);
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDate;
+              const hasIncompleteTasks = dayTasks.some((t) => t.status !== "done");
 
               return (
                 <div
@@ -254,12 +246,17 @@ export default function CalendarPage() {
                       : "border-transparent hover:bg-gray-50"
                   }`}
                 >
-                  <div
-                    className={`text-sm mb-1 ${
-                      isToday ? "font-bold text-blue-600" : "text-gray-700"
-                    }`}
-                  >
-                    {day}
+                  <div className="flex items-center gap-1">
+                    <div
+                      className={`text-sm mb-1 ${
+                        isToday ? "font-bold text-blue-600" : "text-gray-700"
+                      }`}
+                    >
+                      {day}
+                    </div>
+                    {hasIncompleteTasks && (
+                      <span className="w-2 h-2 rounded-full bg-red-500 mb-1 shrink-0" title="미완료 업무 있음"></span>
+                    )}
                   </div>
                   <div className="space-y-0.5">
                     {dayTasks.slice(0, 3).map((t) => (
@@ -309,74 +306,118 @@ export default function CalendarPage() {
               {selectedDate ? "해당 날짜에 마감인 업무가 없습니다" : "캘린더에서 날짜를 클릭하세요"}
             </p>
           ) : (
-            <div className="space-y-3">
-              {selectedDateTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`rounded-lg p-4 border-l-4 group ${
-                    task.assignee === "김정연"
-                      ? "border-l-blue-500 bg-blue-50/50"
-                      : "border-l-pink-500 bg-pink-50/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      {task.category && (
-                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full border ${categoryColor[task.category] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                          {task.category}
-                        </span>
-                      )}
-                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${statusColor[task.status]}`}>
-                        {statusLabel[task.status]}
-                      </span>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEditForm(task)}
-                        className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            <div className="space-y-5">
+              {/* 미완료 섹션 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-orange-400">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  <h4 className="font-bold text-sm text-gray-700">미완료</h4>
+                  <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">{incompleteTasks.length}</span>
+                </div>
+                {incompleteTasks.length === 0 ? (
+                  <p className="text-gray-400 text-xs">모든 업무를 완료했습니다!</p>
+                ) : (
+                  <div className="space-y-2">
+                    {incompleteTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`rounded-lg p-3 border-l-4 group ${
+                          task.assignee === "김정연"
+                            ? "border-l-blue-500 bg-blue-50/50"
+                            : "border-l-pink-500 bg-pink-50/50"
+                        }`}
                       >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDelete(task.id)}
-                        className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
-                      >
-                        삭제
-                      </button>
-                    </div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {task.category && (
+                              <span className={`text-[11px] px-1.5 py-0.5 rounded-full border ${categoryColor[task.category] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                                {task.category}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openEditForm(task)}
+                              className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDelete(task.id)}
+                              className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">{task.title}</h4>
+                        {task.description && (
+                          <p className="text-xs text-gray-500 mb-2">{task.description}</p>
+                        )}
+                        <button
+                          onClick={() => handleStatusChange(task, "done")}
+                          className="text-[11px] px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200 font-medium"
+                        >
+                          완료
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <h4 className="font-medium text-sm mb-2">{task.title}</h4>
-                  {task.description && (
-                    <p className="text-xs text-gray-500 mb-2">{task.description}</p>
-                  )}
-                  <div className="flex items-center gap-1">
-                    {task.status !== "todo" && (
-                      <button
-                        onClick={() => handleStatusChange(task, "todo")}
-                        className="text-[10px] px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+                )}
+              </div>
+
+              {/* 완료 섹션 */}
+              {completeTasks.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-green-400">
+                    <span className="text-green-500 text-sm">✓</span>
+                    <h4 className="font-bold text-sm text-gray-700">완료</h4>
+                    <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{completeTasks.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {completeTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="rounded-lg p-3 border-l-4 border-l-green-400 bg-green-50/50 group"
                       >
-                        할 일
-                      </button>
-                    )}
-                    {task.status !== "in_progress" && (
-                      <button
-                        onClick={() => handleStatusChange(task, "in_progress")}
-                        className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                      >
-                        진행 중
-                      </button>
-                    )}
-                    {task.status !== "done" && (
-                      <button
-                        onClick={() => handleStatusChange(task, "done")}
-                        className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded hover:bg-green-200"
-                      >
-                        완료
-                      </button>
-                    )}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {task.category && (
+                              <span className={`text-[11px] px-1.5 py-0.5 rounded-full border ${categoryColor[task.category] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                                {task.category}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => openEditForm(task)}
+                              className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDelete(task.id)}
+                              className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                        <h4 className="font-medium text-sm mb-1 line-through text-gray-400">{task.title}</h4>
+                        {task.description && (
+                          <p className="text-xs text-gray-400 mb-2 line-through">{task.description}</p>
+                        )}
+                        <button
+                          onClick={() => handleStatusChange(task, "todo")}
+                          className="text-[11px] px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 font-medium"
+                        >
+                          되돌리기
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
 
