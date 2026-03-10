@@ -380,35 +380,6 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {/* 다가오는 마감 알림 */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <h4 className="text-sm font-bold text-gray-700 mb-3">마감 임박 알림</h4>
-            {filteredTasks
-              .filter((t) => {
-                const dd = getDDay(t.dueDate);
-                return (
-                  t.status !== "done" &&
-                  (dd.text === "D-Day" || (dd.text.startsWith("D-") && parseInt(dd.text.slice(2)) <= 3))
-                );
-              })
-              .slice(0, 5)
-              .map((task) => {
-                const dd = getDDay(task.dueDate);
-                return (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between py-2 border-b border-gray-50 cursor-pointer hover:bg-gray-50 rounded px-2"
-                    onClick={() => setSelectedDate(task.dueDate)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${assigneeColor[task.assignee] || "bg-gray-400"}`}></div>
-                      <span className="text-sm">{task.title}</span>
-                    </div>
-                    <span className={`text-xs font-bold ${dd.color}`}>{dd.text}</span>
-                  </div>
-                );
-              })}
-          </div>
         </div>
       </div>
 
