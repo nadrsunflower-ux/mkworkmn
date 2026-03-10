@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/", label: "대시보드", icon: "📊" },
-  { href: "/tasks", label: "업무 관리", icon: "📋" },
-  { href: "/calendar", label: "캘린더", icon: "📅" },
+  { href: "/", label: "캘린더", icon: "📅" },
   { href: "/meetings", label: "회의록", icon: "📝" },
   { href: "/ideas", label: "아이디어", icon: "💡" },
   { href: "/kpi", label: "KPI", icon: "🎯" },
