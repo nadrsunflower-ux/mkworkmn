@@ -14,7 +14,7 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<Task["category"]>("인스타그램");
+  const [category, setCategory] = useState<Task["category"]>("SNS");
   const [dueDate, setDueDate] = useState("");
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
@@ -37,7 +37,7 @@ export default function TasksPage() {
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setCategory("인스타그램");
+    setCategory("SNS");
     setDueDate("");
     setEditTask(null);
     setShowForm(false);
@@ -94,7 +94,7 @@ export default function TasksPage() {
     setEditTask(task);
     setTitle(task.title);
     setDescription(task.description);
-    setCategory(task.category || "인스타그램");
+    setCategory(task.category || "SNS");
     setDueDate(task.dueDate);
     setShowForm(true);
   };
@@ -117,10 +117,10 @@ export default function TasksPage() {
   };
 
   const categoryColor: Record<string, string> = {
-    인스타그램: "bg-pink-100 text-pink-700 border-pink-200",
-    오프라인매장: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    SNS: "bg-pink-100 text-pink-700 border-pink-200",
+    오프라인스토어: "bg-emerald-100 text-emerald-700 border-emerald-200",
     온라인스토어: "bg-purple-100 text-purple-700 border-purple-200",
-    유튜브: "bg-red-100 text-red-700 border-red-200",
+    B2B: "bg-indigo-100 text-indigo-700 border-indigo-200",
     기타: "bg-gray-100 text-gray-600 border-gray-200",
   };
 
@@ -311,7 +311,7 @@ export default function TasksPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">채널 *</label>
                 <div className="flex gap-2">
-                  {(["인스타그램", "오프라인매장", "온라인스토어", "유튜브", "기타"] as const).map((ch) => (
+                  {(["SNS", "오프라인스토어", "온라인스토어", "B2B", "기타"] as const).map((ch) => (
                     <button
                       key={ch}
                       type="button"

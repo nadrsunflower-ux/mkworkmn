@@ -6,10 +6,10 @@ import { getTasks, Task } from "@/lib/firestore";
 const REPORT_START = "2026-05"; // 리포트 집계 시작 월
 
 const categoryColor: Record<string, string> = {
-  인스타그램: "bg-pink-100 text-pink-700 border-pink-200",
-  오프라인매장: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  SNS: "bg-pink-100 text-pink-700 border-pink-200",
+  오프라인스토어: "bg-emerald-100 text-emerald-700 border-emerald-200",
   온라인스토어: "bg-purple-100 text-purple-700 border-purple-200",
-  유튜브: "bg-red-100 text-red-700 border-red-200",
+  B2B: "bg-indigo-100 text-indigo-700 border-indigo-200",
   기타: "bg-gray-100 text-gray-600 border-gray-200",
 };
 
