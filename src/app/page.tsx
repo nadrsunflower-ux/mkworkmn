@@ -287,7 +287,12 @@ export default function CalendarPage() {
                       {day}
                     </div>
                     {hasIncompleteTasks && (
-                      <span className="w-2 h-2 rounded-full bg-red-500 mb-1 shrink-0" title="미완료 업무 있음"></span>
+                      <span
+                        className="text-red-600 font-bold text-sm leading-none mb-1 shrink-0"
+                        title="미완료 업무 있음"
+                      >
+                        !
+                      </span>
                     )}
                   </div>
                   <div className="space-y-0.5">
