@@ -27,10 +27,40 @@ const statusBadge: Record<Task["status"], string> = {
   on_hold: "bg-amber-100 text-amber-700",
 };
 
+type StatusFilter = "all" | "done" | "incomplete" | "on_hold";
+type ChannelFilter = "all" | "SNS" | "오프라인스토어" | "온라인스토어" | "B2B" | "기타";
+
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "done", label: "완료" },
+  { key: "incomplete", label: "미완료" },
+  { key: "on_hold", label: "보류" },
+];
+
+const CHANNEL_TABS: { key: ChannelFilter; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "SNS", label: "SNS" },
+  { key: "오프라인스토어", label: "오프라인스토어" },
+  { key: "온라인스토어", label: "온라인스토어" },
+  { key: "B2B", label: "B2B" },
+  { key: "기타", label: "기타" },
+];
+
+const matchStatus = (t: Task, f: StatusFilter) => {
+  if (f === "all") return true;
+  if (f === "done") return t.status === "done";
+  if (f === "on_hold") return t.status === "on_hold";
+  return t.status !== "done" && t.status !== "on_hold";
+};
+
+const matchChannel = (t: Task, f: ChannelFilter) => f === "all" || t.category === f;
+
 export default function ReportsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({});
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
   useEffect(() => {
     (async () => {
@@ -45,12 +75,52 @@ export default function ReportsPage() {
     })();
   }, []);
 
+  const baseTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) => t.dueDate && t.dueDate.length >= 7 && t.dueDate.slice(0, 7) >= REPORT_START
+      ),
+    [tasks]
+  );
+
+  const filteredTasks = useMemo(
+    () =>
+      baseTasks.filter((t) => matchStatus(t, statusFilter) && matchChannel(t, channelFilter)),
+    [baseTasks, statusFilter, channelFilter]
+  );
+
+  const statusCounts = useMemo(() => {
+    const scoped = baseTasks.filter((t) => matchChannel(t, channelFilter));
+    return {
+      all: scoped.length,
+      done: scoped.filter((t) => t.status === "done").length,
+      incomplete: scoped.filter((t) => t.status !== "done" && t.status !== "on_hold").length,
+      on_hold: scoped.filter((t) => t.status === "on_hold").length,
+    };
+  }, [baseTasks, channelFilter]);
+
+  const channelCounts = useMemo(() => {
+    const scoped = baseTasks.filter((t) => matchStatus(t, statusFilter));
+    const result: Record<ChannelFilter, number> = {
+      all: scoped.length,
+      SNS: 0,
+      오프라인스토어: 0,
+      온라인스토어: 0,
+      B2B: 0,
+      기타: 0,
+    };
+    for (const t of scoped) {
+      if (t.category && t.category in result) {
+        result[t.category as ChannelFilter]++;
+      }
+    }
+    return result;
+  }, [baseTasks, statusFilter]);
+
   const monthly = useMemo(() => {
     const byMonth = new Map<string, Task[]>();
-    for (const t of tasks) {
-      if (!t.dueDate || t.dueDate.length < 7) continue;
+    for (const t of filteredTasks) {
       const ym = t.dueDate.slice(0, 7);
-      if (ym < REPORT_START) continue;
       if (!byMonth.has(ym)) byMonth.set(ym, []);
       byMonth.get(ym)!.push(t);
     }
@@ -63,7 +133,7 @@ export default function ReportsPage() {
         const incomplete = sorted.length - done - onHold;
         return { ym, list: sorted, total: sorted.length, done, onHold, incomplete };
       });
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const toggle = (ym: string) =>
     setOpenMonths((s) => ({ ...s, [ym]: !(s[ym] ?? true) }));
@@ -82,7 +152,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-800">리포트</h2>
         <span className="text-xs text-gray-500">
@@ -90,10 +160,66 @@ export default function ReportsPage() {
         </span>
       </div>
 
+      {/* 상태 탭 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-gray-500 mr-1">상태</span>
+        {STATUS_TABS.map((tab) => {
+          const active = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                active
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                  active ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                {statusCounts[tab.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 채널 탭 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-gray-500 mr-1">채널</span>
+        {CHANNEL_TABS.map((tab) => {
+          const active = channelFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setChannelFilter(tab.key)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                active
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                  active ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                {channelCounts[tab.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {monthly.length === 0 ? (
         <div className="bg-white rounded-xl p-10 shadow-sm border border-gray-100 text-center">
           <p className="text-gray-400 text-sm">
-            {formatMonth(REPORT_START)} 이후 마감인 업무가 없습니다.
+            선택한 조건에 해당하는 업무가 없습니다.
           </p>
         </div>
       ) : (
