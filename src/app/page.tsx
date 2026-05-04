@@ -8,7 +8,7 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"김정연" | "유선화">("김정연");
+  const [activeTab] = useState<"김정연">("김정연");
 
   // 업무 폼
   const [showForm, setShowForm] = useState(false);
@@ -163,6 +163,49 @@ export default function CalendarPage() {
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
 
+  const renderStatusButtons = (task: Task) => {
+    const isDone = task.status === "done";
+    const isOnHold = task.status === "on_hold";
+    const isIncomplete = !isDone && !isOnHold;
+    return (
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => handleStatusChange(task, "done")}
+          disabled={isDone}
+          className={`text-[11px] px-3 py-1 rounded-md font-medium shadow-sm transition-colors ${
+            isDone
+              ? "bg-green-600 text-white ring-2 ring-green-300 cursor-default"
+              : "bg-white text-green-700 border border-green-300 hover:bg-green-50"
+          }`}
+        >
+          완료
+        </button>
+        <button
+          onClick={() => handleStatusChange(task, "todo")}
+          disabled={isIncomplete}
+          className={`text-[11px] px-3 py-1 rounded-md font-medium shadow-sm transition-colors ${
+            isIncomplete
+              ? "bg-orange-500 text-white ring-2 ring-orange-300 cursor-default"
+              : "bg-white text-orange-700 border border-orange-300 hover:bg-orange-50"
+          }`}
+        >
+          미완료
+        </button>
+        <button
+          onClick={() => handleStatusChange(task, "on_hold")}
+          disabled={isOnHold}
+          className={`text-[11px] px-3 py-1 rounded-md font-medium shadow-sm transition-colors ${
+            isOnHold
+              ? "bg-amber-500 text-white ring-2 ring-amber-300 cursor-default"
+              : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-50"
+          }`}
+        >
+          보류
+        </button>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -177,31 +220,19 @@ export default function CalendarPage() {
 
       {/* 담당자 탭 */}
       <div className="flex gap-2">
-        {(["김정연", "유선화"] as const).map((name) => {
+        {(() => {
           const count = tasks.filter(
-            (t) => t.assignee === name && t.status !== "done"
+            (t) => t.assignee === "김정연" && t.status !== "done"
           ).length;
-          const tabBg = name === "김정연" ? "bg-blue-600" : "bg-pink-600";
-          const countBg = name === "김정연" ? "bg-blue-500" : "bg-pink-500";
           return (
-            <button
-              key={name}
-              onClick={() => setActiveTab(name)}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === name
-                  ? `${tabBg} text-white`
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              to {name}
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
-                activeTab === name ? `${countBg} text-white` : "bg-gray-200 text-gray-500"
-              }`}>
+            <div className="px-5 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white">
+              김정연 업무관리
+              <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-blue-500 text-white">
                 {count}
               </span>
-            </button>
+            </div>
           );
-        })}
+        })()}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -355,20 +386,7 @@ export default function CalendarPage() {
                         {task.description && (
                           <p className="text-xs text-gray-500 mb-2">{task.description}</p>
                         )}
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleStatusChange(task, "done")}
-                            className="text-[11px] px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium shadow-sm"
-                          >
-                            완료
-                          </button>
-                          <button
-                            onClick={() => handleStatusChange(task, "on_hold")}
-                            className="text-[11px] px-3 py-1 bg-amber-500 text-white rounded-md hover:bg-amber-600 font-medium shadow-sm"
-                          >
-                            보류
-                          </button>
-                        </div>
+                        {renderStatusButtons(task)}
                       </div>
                     ))}
                   </div>
@@ -416,12 +434,7 @@ export default function CalendarPage() {
                         {task.description && (
                           <p className="text-xs text-gray-500 mb-2">{task.description}</p>
                         )}
-                        <button
-                          onClick={() => handleStatusChange(task, "todo")}
-                          className="text-[11px] px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 font-medium shadow-sm"
-                        >
-                          되돌리기
-                        </button>
+                        {renderStatusButtons(task)}
                       </div>
                     ))}
                   </div>
@@ -469,12 +482,7 @@ export default function CalendarPage() {
                         {task.description && (
                           <p className="text-xs text-gray-400 mb-2 line-through">{task.description}</p>
                         )}
-                        <button
-                          onClick={() => handleStatusChange(task, "todo")}
-                          className="text-[11px] px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 font-medium shadow-sm"
-                        >
-                          되돌리기
-                        </button>
+                        {renderStatusButtons(task)}
                       </div>
                     ))}
                   </div>
@@ -491,7 +499,7 @@ export default function CalendarPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
             <h3 className="text-xl font-bold mb-4">
-              {editTask ? "업무 수정" : `to ${activeTab} 업무 추가`}
+              {editTask ? "업무 수정" : `${activeTab} 업무 추가`}
             </h3>
             <div className="space-y-4">
               <div>

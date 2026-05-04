@@ -63,31 +63,6 @@ export interface InstagramReels {
   createdAt: Timestamp;
 }
 
-export interface MeetingMinutes {
-  id: string;
-  meetingDate: string;
-  title: string;
-  content: string;
-  attendees: string[];
-  author: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export interface AgendaItem {
-  title: string;
-  detail: string;
-}
-
-export interface MeetingAgenda {
-  id: string;
-  weekDate: string;
-  items: AgendaItem[];
-  author: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
 export interface Idea {
   id: string;
   date: string;
@@ -269,60 +244,6 @@ export async function addActivityLog(
     details,
     createdAt: Timestamp.now(),
   });
-}
-
-// === Meeting Minutes ===
-export async function getMeetingMinutes(): Promise<MeetingMinutes[]> {
-  const q = query(collection(db, "meetingMinutes"), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToData<MeetingMinutes>(d));
-}
-
-export async function addMeetingMinutes(data: Omit<MeetingMinutes, "id" | "createdAt" | "updatedAt">): Promise<string> {
-  const docRef = await addDoc(collection(db, "meetingMinutes"), {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  });
-  return docRef.id;
-}
-
-export async function updateMeetingMinutes(id: string, data: Partial<MeetingMinutes>): Promise<void> {
-  await updateDoc(doc(db, "meetingMinutes", id), {
-    ...data,
-    updatedAt: Timestamp.now(),
-  });
-}
-
-export async function deleteMeetingMinutes(id: string): Promise<void> {
-  await deleteDoc(doc(db, "meetingMinutes", id));
-}
-
-// === Meeting Agendas ===
-export async function getMeetingAgendas(): Promise<MeetingAgenda[]> {
-  const q = query(collection(db, "meetingAgendas"), orderBy("weekDate", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => docToData<MeetingAgenda>(d));
-}
-
-export async function addMeetingAgenda(data: Omit<MeetingAgenda, "id" | "createdAt" | "updatedAt">): Promise<string> {
-  const docRef = await addDoc(collection(db, "meetingAgendas"), {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  });
-  return docRef.id;
-}
-
-export async function updateMeetingAgenda(id: string, data: Partial<MeetingAgenda>): Promise<void> {
-  await updateDoc(doc(db, "meetingAgendas", id), {
-    ...data,
-    updatedAt: Timestamp.now(),
-  });
-}
-
-export async function deleteMeetingAgenda(id: string): Promise<void> {
-  await deleteDoc(doc(db, "meetingAgendas", id));
 }
 
 // === Ideas ===

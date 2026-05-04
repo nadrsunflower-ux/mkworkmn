@@ -6,7 +6,7 @@ import { getTasks, addTask, updateTask, deleteTask, Task } from "@/lib/firestore
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"김정연" | "유선화">("김정연");
+  const [activeTab] = useState<"김정연">("김정연");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
@@ -258,29 +258,19 @@ export default function TasksPage() {
 
       {/* 담당자 탭 */}
       <div className="flex gap-2">
-        {(["김정연", "유선화"] as const).map((name) => {
+        {(() => {
           const count = tasks.filter(
-            (t) => t.assignee === name && t.dueDate.startsWith(monthStr) && t.status !== "done"
+            (t) => t.assignee === "김정연" && t.dueDate.startsWith(monthStr) && t.status !== "done"
           ).length;
           return (
-            <button
-              key={name}
-              onClick={() => setActiveTab(name)}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === name
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              to {name}
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
-                activeTab === name ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"
-              }`}>
+            <div className="px-5 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white">
+              김정연 업무관리
+              <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-blue-500 text-white">
                 {count}
               </span>
-            </button>
+            </div>
           );
-        })}
+        })()}
       </div>
 
       {/* 업무 목록 */}
@@ -295,7 +285,7 @@ export default function TasksPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
             <h3 className="text-xl font-bold mb-4">
-              {editTask ? "업무 수정" : `to ${activeTab} 업무 추가`}
+              {editTask ? "업무 수정" : `${activeTab} 업무 추가`}
             </h3>
             <div className="space-y-4">
               <div>

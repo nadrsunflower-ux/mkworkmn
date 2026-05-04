@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/", label: "캘린더", icon: "📅" },
-  { href: "/meetings", label: "회의록", icon: "📝" },
   { href: "/ideas", label: "아이디어", icon: "💡" },
   { href: "/kpi", label: "KPI", icon: "🎯" },
-  { href: "/reports", label: "리포트", icon: "📄" },
 ];
 
 export default function Sidebar() {
