@@ -265,6 +265,8 @@ export default function CalendarPage() {
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDate;
               const hasIncompleteTasks = dayTasks.some((t) => t.status !== "done" && t.status !== "on_hold");
+              const hasOnHoldTasks = dayTasks.some((t) => t.status === "on_hold");
+              const isPast = dateStr < todayStr;
 
               return (
                 <div
@@ -287,7 +289,7 @@ export default function CalendarPage() {
                       {day}
                     </div>
                     {hasIncompleteTasks &&
-                      (dateStr < todayStr ? (
+                      (isPast ? (
                         <span
                           className="text-red-600 font-bold text-sm leading-none mb-1 shrink-0"
                           title="지난 미완료 업무 있음"
@@ -300,6 +302,12 @@ export default function CalendarPage() {
                           title="미완료 업무 있음"
                         ></span>
                       ))}
+                    {isPast && hasOnHoldTasks && (
+                      <span
+                        className="w-2 h-2 rounded-full bg-yellow-400 mb-1 shrink-0"
+                        title="지난 보류 업무 있음"
+                      ></span>
+                    )}
                   </div>
                   <div className="space-y-0.5">
                     {dayTasks.slice(0, 3).map((t) => (
