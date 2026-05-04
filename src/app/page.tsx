@@ -44,7 +44,7 @@ export default function CalendarPage() {
   for (let i = 0; i < firstDay; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 
   const filteredTasks = tasks.filter((t) => t.assignee === activeTab);
 
@@ -286,14 +286,20 @@ export default function CalendarPage() {
                     >
                       {day}
                     </div>
-                    {hasIncompleteTasks && (
-                      <span
-                        className="text-red-600 font-bold text-sm leading-none mb-1 shrink-0"
-                        title="미완료 업무 있음"
-                      >
-                        !
-                      </span>
-                    )}
+                    {hasIncompleteTasks &&
+                      (dateStr < todayStr ? (
+                        <span
+                          className="text-red-600 font-bold text-sm leading-none mb-1 shrink-0"
+                          title="지난 미완료 업무 있음"
+                        >
+                          !
+                        </span>
+                      ) : (
+                        <span
+                          className="w-2 h-2 rounded-full bg-red-500 mb-1 shrink-0"
+                          title="미완료 업무 있음"
+                        ></span>
+                      ))}
                   </div>
                   <div className="space-y-0.5">
                     {dayTasks.slice(0, 3).map((t) => (
