@@ -100,6 +100,15 @@ export interface ActivityLog {
   createdAt: Timestamp;
 }
 
+export interface OffSwap {
+  id: string;
+  originalOffDate: string;   // 원래 오프였으나 출근으로 바뀐 날
+  substituteOffDate: string; // 대체로 쉬게 된 날
+  reason?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 // === Helper ===
 function docToData<T>(doc: DocumentData): T {
   return { id: doc.id, ...doc.data() } as T;
@@ -296,6 +305,38 @@ export async function addIdeaComment(ideaId: string, author: string, content: st
 
 export async function deleteIdeaComment(id: string): Promise<void> {
   await deleteDoc(doc(db, "ideaComments", id));
+}
+
+// === Off Swaps ===
+export async function getOffSwaps(): Promise<OffSwap[]> {
+  const q = query(collection(db, "offSwaps"), orderBy("originalOffDate", "desc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => docToData<OffSwap>(d));
+}
+
+export async function addOffSwap(
+  data: Omit<OffSwap, "id" | "createdAt" | "updatedAt">
+): Promise<string> {
+  const docRef = await addDoc(collection(db, "offSwaps"), {
+    ...data,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+  return docRef.id;
+}
+
+export async function updateOffSwap(
+  id: string,
+  data: Partial<Omit<OffSwap, "id" | "createdAt">>
+): Promise<void> {
+  await updateDoc(doc(db, "offSwaps", id), {
+    ...data,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function deleteOffSwap(id: string): Promise<void> {
+  await deleteDoc(doc(db, "offSwaps", id));
 }
 
 // === File Upload ===

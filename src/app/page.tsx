@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTasks, addTask, updateTask, deleteTask, Task } from "@/lib/firestore";
+import {
+  getTasks,
+  addTask,
+  updateTask,
+  deleteTask,
+  Task,
+  getOffSwaps,
+  addOffSwap,
+  updateOffSwap,
+  deleteOffSwap,
+  OffSwap,
+} from "@/lib/firestore";
 
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -19,10 +30,20 @@ export default function CalendarPage() {
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchTasks = async () => {
+  // 오프 변경
+  const [offSwaps, setOffSwaps] = useState<OffSwap[]>([]);
+  const [showOffForm, setShowOffForm] = useState(false);
+  const [editOffSwap, setEditOffSwap] = useState<OffSwap | null>(null);
+  const [originalOffDate, setOriginalOffDate] = useState("");
+  const [substituteOffDate, setSubstituteOffDate] = useState("");
+  const [offReason, setOffReason] = useState("");
+  const [savingOff, setSavingOff] = useState(false);
+
+  const fetchData = async () => {
     try {
-      const t = await getTasks();
+      const [t, s] = await Promise.all([getTasks(), getOffSwaps()]);
       setTasks(t);
+      setOffSwaps(s);
     } catch (error) {
       console.error("데이터 로딩 실패:", error);
     } finally {
@@ -31,7 +52,7 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchData();
   }, []);
 
   const year = currentDate.getFullYear();
@@ -134,7 +155,7 @@ export default function CalendarPage() {
         });
       }
       resetForm();
-      fetchTasks();
+      fetchData();
     } catch (error) {
       console.error("저장 실패:", error);
     } finally {
@@ -158,6 +179,71 @@ export default function CalendarPage() {
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (error) {
       console.error("삭제 실패:", error);
+    }
+  };
+
+  // 오프 변경 룩업
+  const offSwapByOriginal = (dateStr: string) =>
+    offSwaps.find((s) => s.originalOffDate === dateStr);
+  const offSwapBySubstitute = (dateStr: string) =>
+    offSwaps.find((s) => s.substituteOffDate === dateStr);
+
+  const resetOffForm = () => {
+    setOriginalOffDate("");
+    setSubstituteOffDate("");
+    setOffReason("");
+    setEditOffSwap(null);
+    setShowOffForm(false);
+  };
+
+  const openAddOffForm = () => {
+    resetOffForm();
+    setOriginalOffDate(selectedDate || todayStr);
+    setShowOffForm(true);
+  };
+
+  const openEditOffForm = (swap: OffSwap) => {
+    setEditOffSwap(swap);
+    setOriginalOffDate(swap.originalOffDate);
+    setSubstituteOffDate(swap.substituteOffDate);
+    setOffReason(swap.reason || "");
+    setShowOffForm(true);
+  };
+
+  const handleSaveOff = async () => {
+    if (!originalOffDate || !substituteOffDate) return;
+    if (originalOffDate === substituteOffDate) {
+      alert("원래 오프와 대체 오프 날짜가 같을 수 없습니다.");
+      return;
+    }
+    setSavingOff(true);
+    try {
+      if (editOffSwap) {
+        await updateOffSwap(editOffSwap.id, {
+          originalOffDate,
+          substituteOffDate,
+          reason: offReason,
+        });
+      } else {
+        await addOffSwap({ originalOffDate, substituteOffDate, reason: offReason });
+      }
+      resetOffForm();
+      const s = await getOffSwaps();
+      setOffSwaps(s);
+    } catch (error) {
+      console.error("오프 변경 저장 실패:", error);
+    } finally {
+      setSavingOff(false);
+    }
+  };
+
+  const handleDeleteOff = async (id: string) => {
+    if (!confirm("이 오프 변경을 삭제하시겠습니까?")) return;
+    try {
+      await deleteOffSwap(id);
+      setOffSwaps((prev) => prev.filter((s) => s.id !== id));
+    } catch (error) {
+      console.error("오프 변경 삭제 실패:", error);
     }
   };
 
@@ -267,18 +353,20 @@ export default function CalendarPage() {
               const hasIncompleteTasks = dayTasks.some((t) => t.status !== "done" && t.status !== "on_hold");
               const hasOnHoldTasks = dayTasks.some((t) => t.status === "on_hold");
               const isPast = dateStr < todayStr;
+              const swapOriginal = offSwapByOriginal(dateStr);
+              const swapSubstitute = offSwapBySubstitute(dateStr);
+
+              let cellBg = "border-transparent hover:bg-gray-50";
+              if (isSelected) cellBg = "border-blue-500 bg-blue-50";
+              else if (isToday) cellBg = "border-blue-300 bg-blue-50/50";
+              else if (swapOriginal) cellBg = "border-gray-300 bg-[repeating-linear-gradient(45deg,_rgba(156,163,175,0.12)_0px,_rgba(156,163,175,0.12)_4px,_transparent_4px,_transparent_8px)] hover:bg-gray-100";
+              else if (swapSubstitute) cellBg = "border-sky-300 bg-sky-50 hover:bg-sky-100";
 
               return (
                 <div
                   key={day}
                   onClick={() => setSelectedDate(dateStr)}
-                  className={`p-2 min-h-[80px] rounded-lg cursor-pointer transition-colors border ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50"
-                      : isToday
-                      ? "border-blue-300 bg-blue-50/50"
-                      : "border-transparent hover:bg-gray-50"
-                  }`}
+                  className={`p-2 min-h-[80px] rounded-lg cursor-pointer transition-colors border ${cellBg}`}
                 >
                   <div className="flex items-center gap-1">
                     <div
@@ -309,6 +397,22 @@ export default function CalendarPage() {
                       ></span>
                     )}
                   </div>
+                  {swapOriginal && (
+                    <div
+                      className="inline-block text-[9px] font-semibold px-1 py-0.5 rounded bg-gray-200 text-gray-700 mb-0.5"
+                      title={`오프 → 근무 (대체: ${swapOriginal.substituteOffDate})`}
+                    >
+                      오프→근무
+                    </div>
+                  )}
+                  {swapSubstitute && (
+                    <div
+                      className="inline-block text-[9px] font-semibold px-1 py-0.5 rounded bg-sky-200 text-sky-800 mb-0.5"
+                      title={`대체 오프 (원래 오프: ${swapSubstitute.originalOffDate})`}
+                    >
+                      대체 오프
+                    </div>
+                  )}
                   <div className="space-y-0.5">
                     {dayTasks.slice(0, 3).map((t) => (
                       <div
@@ -343,14 +447,99 @@ export default function CalendarPage() {
               )}
             </div>
             {selectedDate && (
-              <button
-                onClick={openAddForm}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
-              >
-                + 업무 추가
-              </button>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={openAddOffForm}
+                  className="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs hover:bg-sky-700"
+                >
+                  + 오프 변경
+                </button>
+                <button
+                  onClick={openAddForm}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+                >
+                  + 업무 추가
+                </button>
+              </div>
             )}
           </div>
+
+          {selectedDate && (offSwapByOriginal(selectedDate) || offSwapBySubstitute(selectedDate)) && (
+            <div className="mb-4 space-y-2">
+              {(() => {
+                const swap = offSwapByOriginal(selectedDate);
+                if (!swap) return null;
+                return (
+                  <div className="rounded-lg p-3 border-l-4 border-l-gray-400 bg-gray-100/70">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gray-200 text-gray-700">
+                        오프 → 근무
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openEditOffForm(swap)}
+                          className="text-[10px] px-1.5 py-0.5 bg-white text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOff(swap.id)}
+                          className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-700">
+                      원래 쉴 날 → <b>출근</b>
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      대체 오프: <b>{swap.substituteOffDate}</b>
+                    </p>
+                    {swap.reason && (
+                      <p className="text-xs text-gray-500 mt-1">사유: {swap.reason}</p>
+                    )}
+                  </div>
+                );
+              })()}
+              {(() => {
+                const swap = offSwapBySubstitute(selectedDate);
+                if (!swap) return null;
+                return (
+                  <div className="rounded-lg p-3 border-l-4 border-l-sky-400 bg-sky-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-sky-200 text-sky-800">
+                        대체 오프
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openEditOffForm(swap)}
+                          className="text-[10px] px-1.5 py-0.5 bg-white text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOff(swap.id)}
+                          className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-sky-900">
+                      이 날 <b>쉼</b> (원래는 근무일)
+                    </p>
+                    <p className="text-xs text-sky-700 mt-0.5">
+                      원래 오프였던 날: <b>{swap.originalOffDate}</b>
+                    </p>
+                    {swap.reason && (
+                      <p className="text-xs text-sky-600 mt-1">사유: {swap.reason}</p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {selectedDateTasks.length === 0 ? (
             <p className="text-gray-400 text-sm">
@@ -583,6 +772,69 @@ export default function CalendarPage() {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:bg-gray-300"
               >
                 {saving ? "저장 중..." : editTask ? "수정" : "추가"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 오프 변경 추가/수정 모달 */}
+      {showOffForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold mb-1">
+              {editOffSwap ? "오프 변경 수정" : "오프 변경 추가"}
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              원래 쉬려던 날과 대체로 쉴 날을 선택하세요.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  원래 오프였던 날 (→ 출근) *
+                </label>
+                <input
+                  type="date"
+                  value={originalOffDate}
+                  onChange={(e) => setOriginalOffDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  대체로 쉴 날 *
+                </label>
+                <input
+                  type="date"
+                  value={substituteOffDate}
+                  onChange={(e) => setSubstituteOffDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">사유</label>
+                <input
+                  type="text"
+                  value={offReason}
+                  onChange={(e) => setOffReason(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  placeholder="사유 (선택)"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={resetOffForm}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSaveOff}
+                disabled={savingOff || !originalOffDate || !substituteOffDate}
+                className="px-6 py-2 bg-sky-600 text-white rounded-lg text-sm hover:bg-sky-700 disabled:bg-gray-300"
+              >
+                {savingOff ? "저장 중..." : editOffSwap ? "수정" : "추가"}
               </button>
             </div>
           </div>
